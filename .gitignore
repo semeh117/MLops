@@ -1,2 +1,4 @@
 venv/
 churn_data.csv
+mlruns/
+mlflow.db
