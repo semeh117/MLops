@@ -1,4 +1,5 @@
 # ===== 1. Import the libraries =====
+import os  # to find the database file
 from typing import Literal  # to limit the possible values of a field
 import mlflow  # load the model from the Registry
 import mlflow.sklearn
@@ -13,11 +14,16 @@ app = FastAPI(title="Churn API")  # the title is displayed in the /docs page
 
 # ===== 3. Load the champion ONLY ONCE, at startup =====
 # (reloading it at every request would make the API very slow)
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
-model = mlflow.sklearn.load_model("models:/churn-model@champion")
+TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
+MODEL_URI = os.getenv("MODEL_URI", "models:/churn-model@champion")
+
+# ===== 4. Load the champion ONLY ONCE, at startup =====
+# MODEL_URI can be a Registry address (models:/...) or a simple folder (model)
+mlflow.set_tracking_uri(TRACKING_URI)
+model = mlflow.sklearn.load_model(MODEL_URI)
 
 
-# ===== 4. Describe the expected data (validated automatically) =====
+# ===== 5. Describe the expected data (validated automatically) =====
 class Customer(BaseModel):
     age: int  # whole number
     salaire: float  # decimal number (salary)
@@ -26,13 +32,13 @@ class Customer(BaseModel):
     consommation: float  # usage
 
 
-# ===== 5. Route /health: check that the API is alive =====
+# ===== 6. Route /health: check that the API is alive =====
 @app.get("/health")  # GET: we read, we send nothing
 def health():
     return {"status": "ok"}
 
 
-# ===== 6. Route /predict: receive a customer, return the prediction =====
+# ===== 7. Route /predict: receive a customer, return the prediction =====
 @app.post("/predict")  # POST: we send a customer
 def predict(customer: Customer):  # FastAPI checks the received JSON with Customer
 
